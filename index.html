@@ -1,0 +1,419 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>skidboi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/all.min.css">
+    <script src="js/gsap.min.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        cursor: none;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background: radial-gradient(circle at 20% 10%, #2a0d14, #07090d 70%);
+        color: #fff;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* blobs */
+      .bg-blob {
+        position: fixed;
+        width: 520px;
+        height: 520px;
+        border-radius: 50%;
+        filter: blur(150px);
+        opacity: 0.6;
+        z-index: -2;
+      }
+      .blob1 {
+        background: #ef4444;
+        top: -180px;
+        left: -180px;
+      }
+      .blob2 {
+        background: #7f1d1d;
+        bottom: -200px;
+        right: -200px;
+      }
+      .blob3 {
+        background: #dc2626;
+        top: 45%;
+        left: -220px;
+      }
+
+      .noise {
+        position: fixed;
+        inset: 0;
+        background: url("images/noise.svg");
+        opacity: 0.05;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      /* cursor */
+      .cursor {
+        position: fixed;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        pointer-events: none;
+        background: #ef4444;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.9);
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 60px 22px 140px;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 3.1rem;
+        color: #ef4444;
+      }
+      .subtitle {
+        text-align: center;
+        opacity: 0.65;
+        margin-bottom: 32px;
+      }
+
+      .about {
+        max-width: 780px;
+        margin: 0 auto 52px;
+        padding: 24px 28px;
+        background: linear-gradient(180deg, #16080c, #0b0f15);
+        border: 1px solid #2a0f14;
+        border-radius: 26px;
+        box-shadow: 0 0 44px rgba(239, 68, 68, 0.35);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 44px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        padding: 28px;
+        background: linear-gradient(180deg, #16080c, #0b0f15);
+        border: 1px solid #2a0f14;
+        border-radius: 28px;
+        box-shadow: 0 0 46px rgba(239, 68, 68, 0.35);
+      }
+
+      .panel h2 {
+        margin: 0 0 20px;
+        color: #ef4444;
+      }
+
+      .card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        margin: 14px 0;
+        background: linear-gradient(180deg, #180a0f, #0b0f15);
+        border: 1px solid #2a0f14;
+        border-radius: 18px;
+        color: #fff;
+        text-decoration: none;
+        transition: 0.25s;
+      }
+
+      .card:hover {
+        transform: translateY(-3px) scale(1.03);
+        border-color: #ef4444;
+        box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+      }
+
+      .left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .left i {
+        color: #ef4444;
+      }
+
+      .copy-btn {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 1.15rem;
+      }
+
+      /* player */
+      .player {
+        margin: 72px auto 0;
+        max-width: 640px;
+        padding: 22px 26px;
+        border-radius: 30px;
+        background: linear-gradient(180deg, #16080c, #0b0f15);
+        border: 1px solid #2a0f14;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 0 46px rgba(239, 68, 68, 0.45);
+      }
+
+      .player.playing {
+        box-shadow: 0 0 64px rgba(239, 68, 68, 0.8);
+      }
+      .player button {
+        background: none;
+        border: none;
+        color: #ef4444;
+        font-size: 1.25rem;
+        cursor: pointer;
+      }
+
+      .track {
+        flex: 1;
+        opacity: 0.8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ef4444;
+        padding: 10px 20px;
+        border-radius: 20px;
+        opacity: 0;
+        transition: 0.3s;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bg-blob blob1"></div>
+    <div class="bg-blob blob2"></div>
+    <div class="bg-blob blob3"></div>
+    <div class="noise"></div>
+    <div class="cursor" id="cursor"></div>
+
+    <div class="container">
+      <h1>skidboi</h1>
+      <div class="subtitle">developer • larp • internet gremlin • skid</div>
+
+      <div class="about">
+        I build free tools, bots, sites, and random internet stuff. Founder /
+        developer behind <b>SnowStream</b>, <b>CobaltLabs</b>, and
+        <b>Boxer Bot</b>.
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>Links</h2>
+          <a class="card" href="https://guns.lol/skidboi" target="_blank">
+            <div class="left"><i class="fa-solid fa-link"></i> GunsLOL</div>
+          </a>
+          <a class="card" href="https://guns.lol/snowstream" target="_blank">
+            <div class="left"><i class="fa-solid fa-film"></i> Snowstream</div>
+          </a>
+          <a class="card" href="https://guns.lol/cobaltlabs" target="_blank">
+            <div class="left"><i class="fa-solid fa-cube"></i> CobaltLabs</div>
+          </a>
+          <a class="card" href="https://solo.to/boxerbot" target="_blank">
+            <div class="left"><i class="fa-solid fa-robot"></i> Boxer Bot</div>
+          </a>
+          <a class="card" href="https://come.ac/boxer" target="_blank">
+            <div class="left">
+              <i class="fa-solid fa-plus"></i> Invite Boxer Bot
+            </div>
+          </a>
+          <a class="card" href="https://t.me/wrstaxx" target="_blank">
+            <div class="left">
+              <i class="fa-brands fa-telegram"></i> Telegram
+            </div>
+          </a>
+        </div>
+
+        <div class="panel">
+          <h2>Donations</h2>
+
+          <div class="card">
+            <div class="left"><i class="fa-brands fa-bitcoin"></i> Bitcoin</div>
+            <button class="copy-btn" onclick="copyText('bc1q6exg29wc579ken9hg90d3l5es9j89mv52tftss')">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="left">
+              <i class="fa-solid fa-coins"></i> Monero (XMR)
+            </div>
+            <button class="copy-btn" onclick="copyText('47oNinMrNzMAyo82giS11BLwmZTgESvG2cAH5WRoDyXagw7cBuXtZRRV6zCuChWUoB93BPEqanSDqjmGA3ouApDF993uqzu')">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="left">
+              <i class="fa-brands fa-ethereum"></i> Ethereum
+            </div>
+            <button class="copy-btn" onclick="copyText('0x1382D736fe516559861d90d0d009D81bb5251e0B')">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="player" id="player">
+        <button onclick="prevTrack()">
+          <i class="fa-solid fa-backward"></i>
+        </button>
+        <button onclick="togglePlay()">
+          <i id="playIcon" class="fa-solid fa-play"></i>
+        </button>
+        <button onclick="nextTrack()">
+          <i class="fa-solid fa-forward"></i>
+        </button>
+        <div class="track" id="track">Ready</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">Copied</div>
+
+    <script>
+      /* cursor */
+      const cursor = document.getElementById("cursor");
+      window.addEventListener("mousemove", (e) => {
+        cursor.style.left = e.clientX + "px";
+        cursor.style.top = e.clientY + "px";
+      });
+
+      /* blobs */
+      gsap.to(".blob1", {
+        x: 140,
+        y: -80,
+        duration: 30,
+        repeat: -1,
+        yoyo: true,
+      });
+      gsap.to(".blob2", {
+        x: -120,
+        y: 100,
+        duration: 36,
+        repeat: -1,
+        yoyo: true,
+      });
+      gsap.to(".blob3", {
+        x: 160,
+        y: 60,
+        duration: 42,
+        repeat: -1,
+        yoyo: true,
+      });
+
+      /* copy */
+      function copyText(text) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+        } else {
+          const t = document.createElement("textarea");
+          t.value = text;
+          document.body.appendChild(t);
+          t.select();
+          document.execCommand("copy");
+          document.body.removeChild(t);
+        }
+        const toast = document.getElementById("toast");
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1200);
+      }
+
+      /* music */
+      const playlist = [
+        {
+          src: "https://files.catbox.moe/yfz34d.mp3",
+          name: "Cali Man — EsDee Kid",
+        },
+        {
+          src: "https://files.catbox.moe/7hk4fi.mp3",
+          name: "Black Beatles — Rae Sremmurd",
+        },
+        {
+          src: "https://files.catbox.moe/d9r1su.mp3",
+          name: "No Wind Resistance — Hoodtrap",
+        },
+        {
+          src: "https://files.catbox.moe/iko4y1.mp3",
+          name: "Safe In Your Skin — Title Fight",
+        },
+        {
+          src: "https://files.catbox.moe/ml24d9.mp3",
+          name: "Innocent — EthoSuave",
+        },
+        {
+          src: "https://files.catbox.moe/tnqahk.mp3",
+          name: "Unknown - SkidBoi is cool",
+        },
+        {
+          src: "https://files.catbox.moe/55zoc5.mp3",
+          name: "Airplane Mode - Limbo",
+        },
+      ];
+
+      const audio = new Audio();
+      let index = 0;
+      const trackEl = document.getElementById("track");
+      const icon = document.getElementById("playIcon");
+      const player = document.getElementById("player");
+
+      function loadTrack() {
+        audio.src = playlist[index].src;
+        trackEl.textContent = playlist[index].name;
+      }
+
+      function togglePlay() {
+        if (!audio.src) loadTrack();
+        if (audio.paused) {
+          audio.play();
+          icon.className = "fa-solid fa-pause";
+          player.classList.add("playing");
+        } else {
+          audio.pause();
+          icon.className = "fa-solid fa-play";
+          player.classList.remove("playing");
+        }
+      }
+
+      function nextTrack() {
+        index = (index + 1) % playlist.length;
+        loadTrack();
+        audio.play();
+      }
+      function prevTrack() {
+        index = (index - 1 + playlist.length) % playlist.length;
+        loadTrack();
+        audio.play();
+      }
+    </script>
+  
+
+</body></html>
